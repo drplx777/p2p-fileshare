@@ -1,0 +1,16 @@
+.idea/
+.vscode/
+.DS_Store
+
+bin/
+dist/
+tmp/
+data/
+
+*.log
+*.exe
+
+.env
+.env.example
+README.md
+docker-compose.yml
