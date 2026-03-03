@@ -14,7 +14,6 @@ func NewPool(ctx context.Context, databaseURL string) (*pgxpool.Pool, error) {
 		return nil, fmt.Errorf("parse DATABASE_URL: %w", err)
 	}
 
-	// reasonable defaults; can be overridden via DATABASE_URL query parameters.
 	cfg.MaxConns = 10
 	cfg.MinConns = 0
 	cfg.MaxConnLifetime = 30 * time.Minute
@@ -33,4 +32,3 @@ func NewPool(ctx context.Context, databaseURL string) (*pgxpool.Pool, error) {
 	}
 	return pool, nil
 }
-

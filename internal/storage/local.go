@@ -19,7 +19,6 @@ type SaveResult struct {
 	LocalPath string
 }
 
-// SaveStream writes data from r into dstDir using tmp file, computes sha256 and returns CIDv1 (raw) based on sha256.
 func SaveStream(dstDir string, filename string, r io.Reader) (SaveResult, error) {
 	if err := os.MkdirAll(dstDir, 0o755); err != nil {
 		return SaveResult{}, fmt.Errorf("mkdir data dir: %w", err)
@@ -42,7 +41,7 @@ func SaveStream(dstDir string, filename string, r io.Reader) (SaveResult, error)
 		return SaveResult{}, fmt.Errorf("close temp file: %w", err)
 	}
 
-	sum := h.Sum(nil) // 32 bytes
+	sum := h.Sum(nil)
 	shaHex := hex.EncodeToString(sum)
 
 	mh, err := multihash.Encode(sum, multihash.SHA2_256)
@@ -61,7 +60,6 @@ func SaveStream(dstDir string, filename string, r io.Reader) (SaveResult, error)
 	}
 	finalPath := filepath.Join(dstDir, finalName)
 	if _, err := os.Stat(finalPath); err == nil {
-		// content already exists; keep existing file
 		_ = os.Remove(tmp.Name())
 		return SaveResult{
 			SizeBytes: n,
@@ -82,4 +80,3 @@ func SaveStream(dstDir string, filename string, r io.Reader) (SaveResult, error)
 		LocalPath: finalPath,
 	}, nil
 }
-

@@ -20,7 +20,6 @@ func (s *Server) Listen(addr string) error {
 }
 
 func (s *Server) Shutdown(ctx context.Context) error {
-	// Fiber's Shutdown does not accept context; emulate with a goroutine + timeout.
 	done := make(chan error, 1)
 	go func() { done <- s.app.Shutdown() }()
 
@@ -28,7 +27,6 @@ func (s *Server) Shutdown(ctx context.Context) error {
 	case err := <-done:
 		return err
 	case <-ctx.Done():
-		// best-effort: give fiber a bit more time, then return ctx err
 		select {
 		case err := <-done:
 			return err
@@ -37,4 +35,3 @@ func (s *Server) Shutdown(ctx context.Context) error {
 		}
 	}
 }
-

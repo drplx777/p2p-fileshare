@@ -13,11 +13,11 @@ import (
 
 	"github.com/ipfs/go-cid"
 	libp2p "github.com/libp2p/go-libp2p"
+	dht "github.com/libp2p/go-libp2p-kad-dht"
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/network"
 	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/libp2p/go-libp2p/core/protocol"
-	dht "github.com/libp2p/go-libp2p-kad-dht"
 	"github.com/libp2p/go-libp2p/p2p/discovery/mdns"
 	ma "github.com/multiformats/go-multiaddr"
 )
@@ -61,7 +61,6 @@ func NewNode(ctx context.Context, listenAddrs []string, bootstrapPeers []string,
 
 	h.SetStreamHandler(n.protocolID, n.handleFileRequest)
 
-	// Connect bootstrap peers (optional).
 	for _, s := range bootstrapPeers {
 		ai, err := addrInfoFromString(s)
 		if err != nil {
@@ -173,7 +172,6 @@ func (n *Node) Fetch(ctx context.Context, from peer.AddrInfo, cidStr string) (io
 		return nil, 0, fmt.Errorf("bad size: %q", sizeStr)
 	}
 
-	// We consumed the header using br; return a ReadCloser that reads from br and closes the stream.
 	return &streamReadCloser{r: br, s: s}, size, nil
 }
 
@@ -236,7 +234,6 @@ func addrInfoFromString(s string) (*peer.AddrInfo, error) {
 	if s == "" {
 		return nil, errors.New("empty")
 	}
-	// Supports multiaddr with /p2p/<peerID>
 	m, err := ma.NewMultiaddr(s)
 	if err != nil {
 		return nil, err
@@ -247,4 +244,3 @@ func addrInfoFromString(s string) (*peer.AddrInfo, error) {
 	}
 	return ai, nil
 }
-

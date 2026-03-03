@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/drplx/p2p-fileshare/internal/httpserver/middleware"
 	"github.com/drplx/p2p-fileshare/internal/repo"
 	"github.com/drplx/p2p-fileshare/internal/storage"
 	"github.com/gofiber/fiber/v3"
@@ -35,7 +36,6 @@ func (h *P2PHandler) Me(c fiber.Ctx) error {
 	})
 }
 
-// GET /api/v1/p2p/search?cid=...&limit=...
 func (h *P2PHandler) Search(c fiber.Ctx) error {
 	cidStr := c.Query("cid")
 	if cidStr == "" {
@@ -67,15 +67,16 @@ func (h *P2PHandler) Search(c fiber.Ctx) error {
 	return c.JSON(out)
 }
 
-// GET /api/v1/p2p/fetch?cid=...
-// Downloads content via p2p, stores locally, creates DB record and announces in DHT.
 func (h *P2PHandler) Fetch(c fiber.Ctx) error {
+	userID := middleware.GetUserID(c)
+	if userID == "" {
+		return c.Status(http.StatusUnauthorized).JSON(fiber.Map{"error": "unauthorized"})
+	}
 	cidStr := c.Query("cid")
 	if cidStr == "" {
 		return fiber.NewError(http.StatusBadRequest, "cid required")
 	}
 
-	// If already have it, return local record.
 	if existing, err := h.Repo.GetFileByCID(c.Context(), cidStr); err == nil {
 		return c.JSON(toDTO(existing))
 	}
@@ -111,6 +112,7 @@ func (h *P2PHandler) Fetch(c fiber.Ctx) error {
 
 		f := repo.File{
 			ID:        ulid.Make().String(),
+			UserID:    userID,
 			Name:      cidStr,
 			SizeBytes: saved.SizeBytes,
 			SHA256Hex: saved.SHA256Hex,
@@ -132,4 +134,3 @@ func (h *P2PHandler) Fetch(c fiber.Ctx) error {
 	}
 	return fiber.NewError(http.StatusBadGateway, "failed to fetch from providers")
 }
-

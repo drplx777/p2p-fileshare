@@ -26,8 +26,7 @@ func TestProtocol_FetchRoundtrip(t *testing.T) {
 
 	const proto = "/p2p-fileshare/1.0.0-test"
 
-	// node A serves file by CID string "cid123" (we don't validate in test beyond parse, so use a real CID)
-	realCID := "bafkreibm6jg3ux5qumhcn2b3flc3tyu6dmlb4xa7u5bf44yegnrjhcwq4e" // CIDv1 raw sha256("hello")
+	realCID := "bafkreibm6jg3ux5qumhcn2b3flc3tyu6dmlb4xa7u5bf44yegnrjhcwq4e"
 	a, err := NewNode(ctx, []string{"/ip4/127.0.0.1/tcp/0"}, nil, false, proto, func(ctx context.Context, cid string) (string, error) {
 		if cid != realCID {
 			return "", os.ErrNotExist
@@ -64,4 +63,3 @@ func TestProtocol_FetchRoundtrip(t *testing.T) {
 		t.Fatalf("unexpected body: %q", strings.TrimSpace(string(got)))
 	}
 }
-

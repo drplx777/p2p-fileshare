@@ -31,7 +31,9 @@ func main() {
 	}
 	defer pool.Close()
 
+	usersRepo := postgres.NewUsersRepo(pool)
 	filesRepo := postgres.NewFilesRepo(pool)
+	sharesRepo := postgres.NewFileSharesRepo(pool)
 
 	node, err := p2p.NewNode(ctx, cfg.P2PListenAddrs, cfg.P2PBootstrapPeers, cfg.P2PEnableMDNS, cfg.P2PProtocolID, func(ctx context.Context, cid string) (string, error) {
 		f, err := filesRepo.GetFileByCID(ctx, cid)
@@ -45,19 +47,32 @@ func main() {
 	}
 	defer func() { _ = node.Close() }()
 
+	authHandler := &handlers.AuthHandler{
+		Users: usersRepo,
+		JWT:   struct{ Secret []byte }{Secret: cfg.JWTSecret},
+	}
 	filesHandler := &handlers.FilesHandler{
 		Repo:    filesRepo,
 		DataDir: cfg.DataDir,
 		P2P:     node,
 	}
-
 	p2pHandler := &handlers.P2PHandler{
 		Node:    node,
 		Repo:    filesRepo,
 		DataDir: cfg.DataDir,
 	}
+	sharesHandler := &handlers.SharesHandler{
+		Files:  filesRepo,
+		Shares: sharesRepo,
+	}
 
-	app := httpserver.NewApp(httpserver.Deps{Files: filesHandler, P2P: p2pHandler})
+	app := httpserver.NewApp(httpserver.Deps{
+		Auth:       authHandler,
+		Files:      filesHandler,
+		P2P:        p2pHandler,
+		Shares:     sharesHandler,
+		JWTSecret:  cfg.JWTSecret,
+	})
 	srv := httpserver.New(app)
 
 	go func() {

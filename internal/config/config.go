@@ -11,6 +11,7 @@ type Config struct {
 	HTTPAddr    string
 	DatabaseURL string
 	DataDir     string
+	JWTSecret   []byte
 
 	P2PListenAddrs   []string
 	P2PBootstrapPeers []string
@@ -32,6 +33,11 @@ func LoadFromEnv() (Config, error) {
 	if cfg.DatabaseURL == "" {
 		return Config{}, fmt.Errorf("DATABASE_URL is required")
 	}
+	secret := os.Getenv("JWT_SECRET")
+	if secret == "" {
+		return Config{}, fmt.Errorf("JWT_SECRET is required")
+	}
+	cfg.JWTSecret = []byte(secret)
 	return cfg, nil
 }
 

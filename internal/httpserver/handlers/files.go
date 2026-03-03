@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/drplx/p2p-fileshare/internal/httpserver/middleware"
 	"github.com/drplx/p2p-fileshare/internal/repo"
 	"github.com/drplx/p2p-fileshare/internal/storage"
 	"github.com/gofiber/fiber/v3"
@@ -41,8 +42,11 @@ func toDTO(f repo.File) fileDTO {
 	}
 }
 
-// POST /api/v1/files (multipart form field: file)
 func (h *FilesHandler) Upload(c fiber.Ctx) error {
+	userID := middleware.GetUserID(c)
+	if userID == "" {
+		return c.Status(http.StatusUnauthorized).JSON(fiber.Map{"error": "unauthorized"})
+	}
 	fh, err := c.FormFile("file")
 	if err != nil {
 		return fiber.NewError(http.StatusBadRequest, "missing multipart field 'file'")
@@ -60,6 +64,7 @@ func (h *FilesHandler) Upload(c fiber.Ctx) error {
 
 	newFile := repo.File{
 		ID:        ulid.Make().String(),
+		UserID:    userID,
 		Name:      fh.Filename,
 		SizeBytes: saved.SizeBytes,
 		SHA256Hex: saved.SHA256Hex,
@@ -78,9 +83,12 @@ func (h *FilesHandler) Upload(c fiber.Ctx) error {
 	return c.Status(http.StatusCreated).JSON(toDTO(created))
 }
 
-// GET /api/v1/files
 func (h *FilesHandler) List(c fiber.Ctx) error {
-	files, err := h.Repo.ListFiles(c.Context(), 100)
+	userID := middleware.GetUserID(c)
+	if userID == "" {
+		return c.Status(http.StatusUnauthorized).JSON(fiber.Map{"error": "unauthorized"})
+	}
+	files, err := h.Repo.ListFiles(c.Context(), userID, 100)
 	if err != nil {
 		return fiber.NewError(http.StatusInternalServerError, err.Error())
 	}
@@ -91,8 +99,11 @@ func (h *FilesHandler) List(c fiber.Ctx) error {
 	return c.JSON(out)
 }
 
-// GET /api/v1/files/:id
 func (h *FilesHandler) Get(c fiber.Ctx) error {
+	userID := middleware.GetUserID(c)
+	if userID == "" {
+		return c.Status(http.StatusUnauthorized).JSON(fiber.Map{"error": "unauthorized"})
+	}
 	id := c.Params("id")
 	if id == "" {
 		return fiber.NewError(http.StatusBadRequest, "id required")
@@ -103,12 +114,18 @@ func (h *FilesHandler) Get(c fiber.Ctx) error {
 			return fiber.NewError(http.StatusNotFound, "not found")
 		}
 		return fiber.NewError(http.StatusInternalServerError, err.Error())
+	}
+	if f.UserID != userID {
+		return fiber.NewError(http.StatusNotFound, "not found")
 	}
 	return c.JSON(toDTO(f))
 }
 
-// GET /api/v1/files/:id/download
 func (h *FilesHandler) Download(c fiber.Ctx) error {
+	userID := middleware.GetUserID(c)
+	if userID == "" {
+		return c.Status(http.StatusUnauthorized).JSON(fiber.Map{"error": "unauthorized"})
+	}
 	id := c.Params("id")
 	if id == "" {
 		return fiber.NewError(http.StatusBadRequest, "id required")
@@ -120,17 +137,20 @@ func (h *FilesHandler) Download(c fiber.Ctx) error {
 		}
 		return fiber.NewError(http.StatusInternalServerError, err.Error())
 	}
+	if f.UserID != userID {
+		return fiber.NewError(http.StatusNotFound, "not found")
+	}
 	return c.SendFile(f.LocalPath)
 }
 
-// Useful for unit tests (no fiber runtime).
-func (h *FilesHandler) CreateFromStream(ctx context.Context, filename string, r interface{ Read([]byte) (int, error) }) (repo.File, error) {
+func (h *FilesHandler) CreateFromStream(ctx context.Context, userID, filename string, r interface{ Read([]byte) (int, error) }) (repo.File, error) {
 	saved, err := storage.SaveStream(h.DataDir, filename, r)
 	if err != nil {
 		return repo.File{}, fmt.Errorf("save: %w", err)
 	}
 	f := repo.File{
 		ID:        ulid.Make().String(),
+		UserID:    userID,
 		Name:      filename,
 		SizeBytes: saved.SizeBytes,
 		SHA256Hex: saved.SHA256Hex,
@@ -143,4 +163,3 @@ func (h *FilesHandler) CreateFromStream(ctx context.Context, filename string, r 
 	}
 	return created, nil
 }
-

@@ -12,6 +12,7 @@ func TestLoadFromEnv_RequiresDatabaseURL(t *testing.T) {
 
 func TestLoadFromEnv_ParsesP2PFields(t *testing.T) {
 	t.Setenv("DATABASE_URL", "postgres://x")
+	t.Setenv("JWT_SECRET", "test-secret")
 	t.Setenv("P2P_LISTEN_ADDRS", "/ip4/0.0.0.0/tcp/4001, /ip4/127.0.0.1/tcp/4002")
 	t.Setenv("P2P_BOOTSTRAP_PEERS", " /ip4/1.2.3.4/tcp/4001/p2p/12D3KooWJ5hGQ9N9xqgWmKp5rGf9oA3Y4h8y4d1qX2b1qZ9y2a2a ")
 	t.Setenv("P2P_ENABLE_MDNS", "false")

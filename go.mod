@@ -6,6 +6,7 @@ replace github.com/libp2p/go-libp2p/core => github.com/libp2p/go-libp2p v0.47.0
 
 require (
 	github.com/gofiber/fiber/v3 v3.0.0-rc.3
+	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/golang-migrate/migrate/v4 v4.19.1
 	github.com/ipfs/go-cid v0.6.0
 	github.com/jackc/pgx/v5 v5.8.0
@@ -14,6 +15,7 @@ require (
 	github.com/multiformats/go-multiaddr v0.16.1
 	github.com/multiformats/go-multihash v0.2.3
 	github.com/oklog/ulid/v2 v2.1.1
+	golang.org/x/crypto v0.47.0
 )
 
 require (
@@ -122,7 +124,6 @@ require (
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.27.1 // indirect
 	go.yaml.in/yaml/v2 v2.4.3 // indirect
-	golang.org/x/crypto v0.47.0 // indirect
 	golang.org/x/exp v0.0.0-20260112195511-716be5621a96 // indirect
 	golang.org/x/mod v0.32.0 // indirect
 	golang.org/x/net v0.49.0 // indirect

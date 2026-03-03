@@ -14,7 +14,6 @@ type memRepo struct {
 
 func (m *memRepo) CreateFile(ctx context.Context, f repo.File) (repo.File, error) {
 	m.created = append(m.created, f)
-	// simulate DB setting created_at: keep zero OK for unit test
 	return f, nil
 }
 func (m *memRepo) GetFileByID(ctx context.Context, id string) (repo.File, error) {
@@ -33,11 +32,18 @@ func (m *memRepo) GetFileByCID(ctx context.Context, cid string) (repo.File, erro
 	}
 	return repo.File{}, repo.ErrNotFound
 }
-func (m *memRepo) ListFiles(ctx context.Context, limit int) ([]repo.File, error) {
-	if limit <= 0 || limit > len(m.created) {
-		limit = len(m.created)
+func (m *memRepo) ListFiles(ctx context.Context, userID string, limit int) ([]repo.File, error) {
+	var out []repo.File
+	for _, f := range m.created {
+		if userID != "" && f.UserID != userID {
+			continue
+		}
+		out = append(out, f)
+		if limit > 0 && len(out) >= limit {
+			break
+		}
 	}
-	return append([]repo.File(nil), m.created[:limit]...), nil
+	return out, nil
 }
 
 func TestFilesHandler_CreateFromStream(t *testing.T) {
@@ -46,11 +52,11 @@ func TestFilesHandler_CreateFromStream(t *testing.T) {
 	repoMem := &memRepo{}
 	h := &FilesHandler{Repo: repoMem, DataDir: t.TempDir()}
 
-	f1, err := h.CreateFromStream(context.Background(), "x.txt", strings.NewReader("hello"))
+	f1, err := h.CreateFromStream(context.Background(), "user1", "x.txt", strings.NewReader("hello"))
 	if err != nil {
 		t.Fatalf("CreateFromStream: %v", err)
 	}
-	f2, err := h.CreateFromStream(context.Background(), "y.txt", strings.NewReader("hello"))
+	f2, err := h.CreateFromStream(context.Background(), "user1", "y.txt", strings.NewReader("hello"))
 	if err != nil {
 		t.Fatalf("CreateFromStream: %v", err)
 	}
@@ -62,4 +68,3 @@ func TestFilesHandler_CreateFromStream(t *testing.T) {
 		t.Fatalf("expected same sha for same content: %s vs %s", f1.SHA256Hex, f2.SHA256Hex)
 	}
 }
-
