@@ -1,6 +1,6 @@
 module github.com/drplx/p2p-fileshare
 
-go 1.25.0
+go 1.22
 
 replace github.com/libp2p/go-libp2p/core => github.com/libp2p/go-libp2p v0.47.0
 
